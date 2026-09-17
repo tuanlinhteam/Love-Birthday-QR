@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Download, Sparkles, Gift, Smartphone, CheckCircle, AlertTriangle, Upload, Eye, FileCode } from 'lucide-react';
+import { Download, Sparkles, Gift, Smartphone, CheckCircle, AlertTriangle, Upload, Eye, FileCode, Copy, Check, Share2, MessageCircle } from 'lucide-react';
 import { createQRInstance } from '../utils/qrHelper';
 import { FRAME_OPTIONS } from '../constants/presets';
 import { toPng } from 'html-to-image';
@@ -7,6 +7,7 @@ import { testDecodeQR } from '../utils/qrTester';
 
 export default function QRPreview({
   qrData,
+  pageData,
   preset,
   dotType,
   cornerSquareType,
@@ -23,6 +24,7 @@ export default function QRPreview({
   const [qrInstance, setQrInstance] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingFrame, setIsExportingFrame] = useState(false);
+  const [copiedZalo, setCopiedZalo] = useState(false);
 
   // Scan Verification state
   const [scanStatus, setScanStatus] = useState(null); // { success: boolean, data?: string, error?: string }
@@ -50,24 +52,59 @@ export default function QRPreview({
     setScanStatus(null); // Reset test status on change
   }, [qrData, preset, dotType, cornerSquareType, cornerDotType, logoId, customLogoUrl]);
 
-  // 1. Download PURE high-res QR code (1000px, 100% clean, no frame borders to interfere with cameras)
+  // Copy full message with clickable direct link for Zalo
+  const handleCopyZaloMessage = () => {
+    const title = pageData?.title || (pageData?.type === 'birthday' ? 'Happy Birthday to You! 🎂' : 'Gửi Đến Người Anh Yêu Nhất ❤️');
+    const recipientText = pageData?.recipient ? `Gửi đến: ${pageData.recipient}\n` : '';
+    const senderText = pageData?.sender ? `Từ: ${pageData.sender}\n` : '';
+    const textToCopy = `💌 ${title}\n${recipientText}${senderText}Có một trang thiệp bất ngờ kèm nhạc nền du dương, mưa chữ 3D và giọng đọc truyền cảm dành riêng cho bạn nè!\n👉 Chạm vào link này để mở thiệp ngay nhé:\n${qrData}`;
+    
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textToCopy);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = textToCopy;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+
+    setCopiedZalo(true);
+    setTimeout(() => setCopiedZalo(false), 3500);
+  };
+
+  // Direct share to Zalo / mobile share sheet
+  const handleShareZalo = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: pageData?.title || 'Thiệp Bất Ngờ Dành Cho Bạn',
+        text: `Có một trang thiệp bất ngờ dành riêng cho bạn nè! ❤️\nChạm vào link để mở nhé:\n`,
+        url: qrData
+      }).catch(() => {});
+    } else {
+      window.open('https://chat.zalo.me/', '_blank');
+    }
+  };
+
+  // 1. Download PURE high-res QR code (1200px, 100% clean, wide quiet-zone specifically for Zalo gallery scan)
   const handleDownloadPureQR = async () => {
     setIsExporting(true);
     try {
-      // Create high-res 1000px version specifically for print / crystal-clear scan
       const highResQR = createQRInstance({
-        data: qrData || 'https://love.qr',
-        size: 1000,
+        data: qrData || 'https://love-birthday-qr.vercel.app',
+        size: 1200,
         preset,
         dotType,
         cornerSquareType,
         cornerDotType,
         logoId,
-        customLogoUrl
+        customLogoUrl,
+        margin: 36
       });
 
       await highResQR.download({
-        name: `ma_qr_tinh_yeu_chuan_in_${Date.now()}`,
+        name: `ma_qr_chuan_zalo_${Date.now()}`,
         extension: 'png'
       });
     } catch (err) {
@@ -237,6 +274,54 @@ export default function QRPreview({
         )}
       </div>
 
+      {/* Zalo Direct 1-Click Link Sharing (Tap to open immediately without scanning) */}
+      <div className="w-full mt-3.5 p-3.5 bg-gradient-to-br from-blue-50/90 via-sky-50/70 to-indigo-50/80 border border-blue-200/90 rounded-2xl shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+            <MessageCircle className="w-4 h-4 text-blue-600" />
+            <span>Gửi Qua Zalo (Người Nhận Ấn Vào Là Mở Ngay):</span>
+          </span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500 text-white shadow-xs">
+            Khuyên dùng ✨
+          </span>
+        </div>
+
+        <p className="text-[11px] text-slate-600 leading-relaxed">
+          <b>Không cần quét mã!</b> Khi gửi link này qua Zalo, Zalo sẽ tự tạo <b>Thẻ thiệp xem trước</b> cực đẹp. Người ấy chỉ cần <b>chạm 1 lần vào tin nhắn</b> là trang web lập tức mở ra có nhạc, mưa chữ 3D và giọng đọc!
+        </p>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleCopyZaloMessage}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm ${
+              copiedZalo
+                ? 'bg-emerald-600 text-white shadow-emerald-200'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200 hover:scale-[1.01] active:scale-[0.99]'
+            }`}
+          >
+            {copiedZalo ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <span>{copiedZalo ? 'Đã sao chép! Hãy dán vào Zalo' : 'Sao Chép Tin Nhắn & Link Zalo'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleShareZalo}
+            className="px-3 py-2.5 rounded-xl border border-blue-300 bg-white hover:bg-blue-50 text-blue-700 text-xs font-bold transition-all flex items-center justify-center gap-1"
+            title="Mở ứng dụng hoặc chia sẻ ngay"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>Chia sẻ</span>
+          </button>
+        </div>
+
+        {copiedZalo && (
+          <p className="text-[11px] text-emerald-700 font-semibold text-center animate-in fade-in">
+            ✨ Bạn chỉ cần mở Zalo và dán (Paste / Ctrl+V) vào cuộc trò chuyện là xong!
+          </p>
+        )}
+      </div>
+
       {/* Action Buttons */}
       <div className="w-full space-y-2 mt-4">
         {/* BUTTON 1: Pure High-Res QR (Recommended for reliable scanning everywhere) */}
@@ -247,8 +332,21 @@ export default function QRPreview({
           className="w-full py-3 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-lg shadow-rose-200 transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
         >
           <Download className="w-4 h-4" />
-          <span>{isExporting ? 'Đang tạo ảnh...' : 'Tải Riêng Mã QR (PNG Chuẩn 1000px - Dễ Quét Nhất)'}</span>
+          <span>{isExporting ? 'Đang tạo ảnh...' : 'Tải Riêng Mã QR (PNG Chuẩn 1200px - Quét Trên Zalo & Camera)'}</span>
         </button>
+
+        {/* Zalo Scanning Instructions Box */}
+        <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 space-y-1">
+          <div className="font-semibold text-slate-800 flex items-center gap-1">
+            <span>💡 Cách quét mã QR từ ảnh khi gửi qua Zalo:</span>
+          </div>
+          <p>
+            1. Khi gửi ảnh QR trong Zalo, nhớ <b>tick chọn [HD]</b> để ảnh giữ độ nét gốc.
+          </p>
+          <p>
+            2. Người nhận bấm mở ảnh trong Zalo ➜ <b>Nhấn giữ vào ảnh</b> (hoặc bấm biểu tượng <b>[Quét mã QR]</b> ở góc trên màn hình Zalo) là mở thiệp được ngay!
+          </p>
+        </div>
 
         {/* BUTTON 2: Framed Card Image */}
         {frameId !== 'none' && (

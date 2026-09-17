@@ -46,17 +46,33 @@ export default function App() {
   // Check URL parameters to see if opened directly via scanned QR code in interactive view!
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('view') === '1' || params.get('card') === '1') {
-      const encoded = params.get('d');
+    const encoded = params.get('d');
+    if (encoded || params.get('view') === '1' || params.get('card') === '1') {
       if (encoded) {
         try {
-          const decoded = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+          const raw = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+          const decoded = {
+            type: raw.type || (raw.t === 2 ? 'birthday' : 'love'),
+            title: raw.title || raw.ti || (raw.t === 2 ? 'Happy Birthday to You! 🎂' : 'Gửi Đến Người Anh Yêu Nhất ❤️'),
+            recipient: raw.recipient || raw.r || '',
+            sender: raw.sender || raw.s || '',
+            date: raw.date || raw.d || '',
+            message: raw.message || raw.m || '',
+            effect: raw.effect || raw.e || 'neon_words',
+            musicStyle: raw.musicStyle || raw.mu || (raw.t === 2 ? 'birthday_melody' : 'romantic_chords'),
+            enableTTS: raw.enableTTS !== undefined ? raw.enableTTS : (raw.tts !== 0),
+            ttsVoice: raw.ttsVoice || raw.v || 'google_female_crystal',
+            customWords: raw.customWords || raw.w || [],
+            photos: raw.photos || raw.p || []
+          };
           setPageData(decoded);
+          setIsLiveViewerOpen(true);
         } catch (e) {
           console.error('Failed to parse encoded data from QR URL:', e);
         }
+      } else if (params.get('view') === '1') {
+        setIsLiveViewerOpen(true);
       }
-      setIsLiveViewerOpen(true);
     }
   }, []);
 
@@ -64,22 +80,23 @@ export default function App() {
   const qrData = useMemo(() => {
     try {
       const miniData = {
-        type: pageData.type,
-        title: pageData.title,
-        recipient: pageData.recipient,
-        sender: pageData.sender,
-        date: pageData.date,
-        message: pageData.message,
-        effect: pageData.effect,
-        musicStyle: pageData.musicStyle,
-        enableTTS: pageData.enableTTS,
-        ttsVoice: pageData.ttsVoice,
-        customWords: pageData.customWords
+        t: pageData.type === 'birthday' ? 2 : 1,
+        ti: pageData.title,
+        r: pageData.recipient,
+        s: pageData.sender,
+        d: pageData.date,
+        m: pageData.message,
+        e: pageData.effect,
+        mu: pageData.musicStyle,
+        tts: pageData.enableTTS ? 1 : 0,
+        v: pageData.ttsVoice,
+        w: pageData.customWords
       };
       const serialized = btoa(unescape(encodeURIComponent(JSON.stringify(miniData))));
       
-      // Default to LAN IP (192.168.1.5:5173) if on localhost, so phones on same Wi-Fi can open it
-      const host = pageData.customHost || (window.location.hostname === 'localhost' ? 'http://192.168.1.5:5173' : window.location.origin);
+      // Default to deployed Vercel domain so QR codes work worldwide on any phone / 4G / Wi-Fi / Zalo
+      const defaultHost = 'https://love-birthday-qr.vercel.app';
+      const host = pageData.customHost || (window.location.origin.includes('vercel.app') ? window.location.origin : defaultHost);
       const cleanHost = host.endsWith('/') ? host.slice(0, -1) : host;
       return `${cleanHost}/?view=1&d=${serialized}`;
     } catch (e) {
@@ -159,6 +176,7 @@ export default function App() {
           <div className="lg:col-span-5 xl:col-span-4">
             <QRPreview
               qrData={qrData}
+              pageData={pageData}
               preset={selectedPreset}
               dotType={dotType}
               cornerSquareType={cornerSquareType}

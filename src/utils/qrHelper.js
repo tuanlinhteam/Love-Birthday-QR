@@ -10,6 +10,7 @@ export function createQRInstance({
   cornerDotType = 'dot',
   logoId = 'heart',
   customLogoUrl = null,
+  margin = undefined
 }) {
   let imageSource = null;
 
@@ -22,16 +23,18 @@ export function createQRInstance({
     }
   }
 
+  const effectiveMargin = margin !== undefined ? margin : (size >= 800 ? 36 : 22);
+
   const qrOptions = {
     width: size,
     height: size,
     type: 'canvas',
     data: data || 'https://love.qr',
-    margin: 20, // Standard ISO quiet zone ensures phone camera reliably detects boundaries
+    margin: effectiveMargin, // Ample quiet zone ensures Zalo & all phone cameras detect boundaries immediately
     qrOptions: {
       typeNumber: 0,
       mode: 'Byte',
-      errorCorrectionLevel: 'H' // 30% redundancy
+      errorCorrectionLevel: 'Q' // 25% redundancy provides great logo tolerance with significantly lower density than H
     },
     imageOptions: {
       hideBackgroundDots: true,
