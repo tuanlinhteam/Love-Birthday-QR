@@ -1,3 +1,5 @@
+import { calculateDaysInfo } from './dateHelper';
+
 // 3D Neon Floating Words & Names Canvas Engine (TikTok Viral Style)
 
 export function createNeonWordsEngine(canvas, {
@@ -17,7 +19,7 @@ export function createNeonWordsEngine(canvas, {
   const defaultLoveWords = [
     'Em yêu anh', 'Yêu em nhiều', 'Happy Anniversary', 'Mãi bên nhau',
     'Hạnh phúc', 'Luôn mỉm cười', 'Bình yên', 'Thành công', 'Vững vàng',
-    'Forever & Always', 'My Love', '1000 Days', 'Thương em', 'Bên nhau mãi nhé'
+    'Forever & Always', 'My Love', 'Thương em', 'Bên nhau mãi nhé'
   ];
 
   const defaultBirthdayWords = [
@@ -31,7 +33,15 @@ export function createNeonWordsEngine(canvas, {
 
   if (recipient) personalizedList.push(recipient, `Gửi ${recipient}`, `${recipient} ❤️`);
   if (sender) personalizedList.push(sender, `Yêu ${sender}`, `From ${sender}`);
-  if (date) personalizedList.push(date, `Kỷ niệm ${date}`);
+  
+  if (date) {
+    personalizedList.push(date, `Kỷ niệm ${date}`);
+    const daysInfo = calculateDaysInfo(date, type);
+    if (daysInfo && daysInfo.floatingWords) {
+      personalizedList.push(...daysInfo.floatingWords);
+    }
+  }
+
   if (customWords && customWords.length) personalizedList.push(...customWords);
 
   // Combine words and emojis

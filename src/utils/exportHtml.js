@@ -1,3 +1,5 @@
+import { calculateDaysInfo } from './dateHelper';
+
 // Generate a standalone, self-contained interactive Romantic / Birthday HTML page with 3D Neon Floating Words, TTS Voice & 1-Photo Framed Border
 
 export function generateStandaloneHtml(data) {
@@ -16,6 +18,7 @@ export function generateStandaloneHtml(data) {
     customWords = []
   } = data;
 
+  const daysInfo = calculateDaysInfo(date, type);
   const memoryPhoto = photos?.[0] || '';
   const safeMessage = JSON.stringify(message || '');
   const safeTitle = JSON.stringify(title || '');
@@ -241,6 +244,7 @@ export function generateStandaloneHtml(data) {
       <h2 style="font-size: 28px; margin: 16px 0 8px;" class="font-handwriting">
         ${recipient ? 'Gửi ' + recipient + ' ❤️' : 'Gửi Người Đặc Biệt'}
       </h2>
+      ${date ? `<div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; background: rgba(244,63,94,0.2); border: 1px solid rgba(244,63,94,0.35); font-size: 12px; color: #fecdd3; margin-bottom: 12px;">🗓️ ${date} ${daysInfo ? `• <b style="color: #fde047;">${daysInfo.badge}</b>` : ''}</div>` : ''}
       <p style="opacity: 0.85; font-size: 15px; margin-bottom: 24px;">
         ${type === 'birthday' ? 'Một lời chúc sinh nhật bất ngờ, bầu trời chữ 3D lung linh đang chờ bạn...' : 'Có một bức thư bí mật cùng mưa chữ tình yêu phát sáng muốn gửi trao tới bạn...'}
       </p>
@@ -254,7 +258,14 @@ export function generateStandaloneHtml(data) {
       <div style="font-size: 32px;" class="pulse-icon">${type === 'birthday' ? '🎉' : '💖'}</div>
       <h1 style="font-size: 34px; margin-top: 10px; color: #ff6584;" class="font-romantic">${title}</h1>
       
-      ${date ? `<div style="font-size: 14px; opacity: 0.85; margin-top: 4px; color: #fda4af;">🗓️ ${date}</div>` : ''}
+      ${date ? `
+      <div style="margin: 8px 0 16px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div style="font-size: 13px; opacity: 0.85; color: #fda4af;">🗓️ ${date}</div>
+        ${daysInfo ? `
+        <div style="display: inline-block; padding: 5px 14px; border-radius: 9999px; background: rgba(244,63,94,0.25); border: 1px solid rgba(244,63,94,0.45); font-size: 13px; font-weight: 700; color: #fecdd3;">
+          ✨ ${daysInfo.mainText} ✨
+        </div>` : ''}
+      </div>` : ''}
 
       <!-- 1 Memory Photo Frame -->
       ${memoryPhoto ? `
@@ -307,11 +318,14 @@ export function generateStandaloneHtml(data) {
     const particles = [];
 
     if (isNeonWords) {
-      const defaultLove = ['Em yêu anh', 'Yêu em nhiều', 'Happy Anniversary', 'Mãi bên nhau', 'Hạnh phúc', 'Luôn mỉm cười', 'Bình yên', 'Thành công', 'Vững vàng', 'Forever & Always', 'My Love', '1000 Days', 'Bên nhau mãi nhé'];
+      const defaultLove = ['Em yêu anh', 'Yêu em nhiều', 'Happy Anniversary', 'Mãi bên nhau', 'Hạnh phúc', 'Luôn mỉm cười', 'Bình yên', 'Thành công', 'Vững vàng', 'Forever & Always', 'My Love', 'Bên nhau mãi nhé'];
       const personalized = [];
       if (recipient) personalized.push(recipient, 'Gửi ' + recipient, recipient + ' ❤️');
       if (sender) personalized.push(sender, 'Yêu ' + sender);
-      if (date) personalized.push(date, 'Kỷ niệm ' + date);
+      if (date) {
+        personalized.push(date, 'Kỷ niệm ' + date);
+        ${daysInfo && daysInfo.floatingWords ? `personalized.push(${daysInfo.floatingWords.map(w => JSON.stringify(w)).join(', ')});` : ''}
+      }
       if (customWords && customWords.length) personalized.push(...customWords);
 
       const wordPool = [...personalized, ...personalized, ...defaultLove];

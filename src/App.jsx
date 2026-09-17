@@ -9,18 +9,20 @@ import TipsGuideModal from './components/TipsGuideModal';
 import { COLOR_PRESETS, SAMPLE_MESSAGES } from './constants/presets';
 import { generateStandaloneHtml } from './utils/exportHtml';
 
+import { formatDateVN } from './utils/dateHelper';
+
 const DEFAULT_PAGE_DATA = {
   type: 'love',
   title: 'Gửi Đến Người Anh Yêu Nhất ❤️',
   recipient: 'Em Yêu',
   sender: 'Anh của em',
-  date: '14/02/2026',
+  date: formatDateVN(new Date()),
   message: SAMPLE_MESSAGES.love[0],
   effect: 'neon_words',
   musicStyle: 'romantic_chords',
   enableTTS: true,
   ttsVoice: 'google_female_crystal',
-  customWords: ['1000 Days', 'Em yêu anh', 'Hạnh phúc', 'Mãi bên nhau'],
+  customWords: ['Em yêu anh', 'Yêu em nhiều', 'Hạnh phúc', 'Mãi bên nhau'],
   photos: []
 };
 
@@ -36,7 +38,7 @@ function getInitialPageData() {
         title: raw.title || raw.ti || (raw.t === 2 ? 'Happy Birthday to You! 🎂' : 'Gửi Đến Người Anh Yêu Nhất ❤️'),
         recipient: raw.recipient || raw.r || '',
         sender: raw.sender || raw.s || '',
-        date: raw.date || raw.d || '',
+        date: raw.date || raw.dt || raw.d || '',
         message: raw.message || raw.m || '',
         effect: raw.effect || raw.e || 'neon_words',
         musicStyle: raw.musicStyle || raw.mu || (raw.t === 2 ? 'birthday_melody' : 'romantic_chords'),
@@ -89,6 +91,7 @@ export default function App() {
         r: pageData.recipient,
         s: pageData.sender,
         d: pageData.date,
+        dt: pageData.date,
         m: pageData.message,
         e: pageData.effect,
         mu: pageData.musicStyle,

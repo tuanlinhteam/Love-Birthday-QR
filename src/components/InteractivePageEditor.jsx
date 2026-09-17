@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Sparkles, Heart, Cake, Music, Image as ImageIcon, Send, User, Calendar, Wand2, Eye, Mic, Volume2 } from 'lucide-react';
 import { SAMPLE_MESSAGES, AUDIO_TRACKS } from '../constants/presets';
 import { ttsManager, TTS_VOICE_OPTIONS } from '../utils/ttsVoice';
+import { calculateDaysInfo, formatDateVN, formatDateInput, parseDate } from '../utils/dateHelper';
 
 export default function InteractivePageEditor({
   pageData,
@@ -10,6 +11,8 @@ export default function InteractivePageEditor({
 }) {
   const [activeTab, setActiveTab] = useState('message'); // 'message' | 'effects' | 'media'
   const [ttsTesting, setTtsTesting] = useState(false);
+
+  const daysInfo = useMemo(() => calculateDaysInfo(pageData.date, pageData.type), [pageData.date, pageData.type]);
 
   const handleApplySample = (sampleText) => {
     onChangePageData({ ...pageData, message: sampleText });
@@ -54,8 +57,8 @@ export default function InteractivePageEditor({
               musicStyle: 'romantic_chords',
               title: 'Gửi Đến Người Anh Yêu Nhất ❤️',
               customWords: (!pageData.customWords || pageData.customWords.length === 0 || pageData.customWords.includes('Happy Birthday'))
-                ? ['1000 Days', 'Em yêu anh', 'Hạnh phúc', 'Mãi bên nhau']
-                : pageData.customWords
+                ? ['Em yêu anh', 'Yêu em nhiều', 'Hạnh phúc', 'Mãi bên nhau']
+                : pageData.customWords.filter(w => w !== '1000 Days')
             })}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               pageData.type === 'love'
@@ -74,9 +77,9 @@ export default function InteractivePageEditor({
               effect: 'neon_words',
               musicStyle: 'birthday_melody',
               title: 'Happy Birthday to You! 🎂',
-              customWords: (!pageData.customWords || pageData.customWords.length === 0 || pageData.customWords.includes('1000 Days'))
+              customWords: (!pageData.customWords || pageData.customWords.length === 0 || pageData.customWords.includes('Em yêu anh'))
                 ? ['Happy Birthday', 'Tuổi mới rạng rỡ', 'Xinh đẹp', 'Bình an', 'Vạn sự như ý']
-                : pageData.customWords
+                : pageData.customWords.filter(w => w !== '1000 Days')
             })}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               pageData.type === 'birthday'
@@ -134,17 +137,87 @@ export default function InteractivePageEditor({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5 text-rose-500" />
-            <span>Ngày kỷ niệm / Sinh nhật:</span>
+          <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-rose-500" />
+              <span>Ngày kỷ niệm / Sinh nhật:</span>
+            </span>
+            {daysInfo && (
+              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                {daysInfo.badge}
+              </span>
+            )}
           </label>
-          <input
-            type="text"
-            value={pageData.date || ''}
-            onChange={(e) => onChangePageData({ ...pageData, date: e.target.value })}
-            placeholder="VD: 14/02/2026"
-            className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 bg-white"
-          />
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              value={pageData.date || ''}
+              onChange={(e) => onChangePageData({ ...pageData, date: e.target.value })}
+              placeholder="VD: 18/09/2026"
+              className="w-full px-3.5 py-2 pr-10 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 bg-white"
+            />
+            {/* Native Date Picker trigger */}
+            <input
+              type="date"
+              value={formatDateInput(pageData.date)}
+              onChange={(e) => {
+                if (e.target.value) {
+                  const d = parseDate(e.target.value);
+                  onChangePageData({ ...pageData, date: formatDateVN(d) });
+                }
+              }}
+              className="absolute right-2.5 w-6 h-6 opacity-40 hover:opacity-100 cursor-pointer bg-transparent border-0"
+              title="Mở lịch chọn ngày"
+            />
+          </div>
+
+          {/* Dynamic Days Count Preview */}
+          {daysInfo ? (
+            <div className="mt-1.5 p-2 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200/80 text-[11px] text-pink-900 flex items-center justify-between shadow-xs">
+              <div className="font-semibold flex items-center gap-1.5">
+                <span>{daysInfo.isFuture ? '⏳' : '💕'}</span>
+                <span>{daysInfo.mainText}</span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-medium hidden sm:inline">
+                {daysInfo.secondaryText}
+              </span>
+            </div>
+          ) : (
+            <p className="text-[10px] text-slate-400 mt-1">Định dạng: Ngày/Tháng/Năm (VD: 18/09/2026)</p>
+          )}
+
+          {/* Quick presets */}
+          <div className="flex items-center gap-1 mt-1.5">
+            <button
+              type="button"
+              onClick={() => onChangePageData({ ...pageData, date: formatDateVN(new Date()) })}
+              className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-600 transition-colors"
+            >
+              Hôm nay
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const d = new Date();
+                d.setDate(d.getDate() - 100);
+                onChangePageData({ ...pageData, date: formatDateVN(d) });
+              }}
+              className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-600 transition-colors"
+            >
+              100 ngày trước
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const d = new Date();
+                d.setFullYear(d.getFullYear() - 1);
+                onChangePageData({ ...pageData, date: formatDateVN(d) });
+              }}
+              className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-600 transition-colors"
+            >
+              1 năm trước
+            </button>
+          </div>
         </div>
       </div>
 
@@ -248,12 +321,12 @@ export default function InteractivePageEditor({
         </label>
         <input
           type="text"
-          value={pageData.customWords ? (Array.isArray(pageData.customWords) ? pageData.customWords.join(', ') : pageData.customWords) : (pageData.type === 'birthday' ? 'Happy Birthday, Tuổi mới rạng rỡ, Xinh đẹp, Vạn sự như ý, Bình an' : '1000 Days, Em yêu anh, Hạnh phúc, Mãi bên nhau')}
+          value={pageData.customWords ? (Array.isArray(pageData.customWords) ? pageData.customWords.join(', ') : pageData.customWords) : (pageData.type === 'birthday' ? 'Happy Birthday, Tuổi mới rạng rỡ, Xinh đẹp, Vạn sự như ý, Bình an' : 'Em yêu anh, Yêu em nhiều, Hạnh phúc, Mãi bên nhau')}
           onChange={(e) => {
             const words = e.target.value.split(',').map(w => w.trim()).filter(Boolean);
             onChangePageData({ ...pageData, customWords: words });
           }}
-          placeholder={pageData.type === 'birthday' ? 'VD: Happy Birthday, Tuổi mới rạng rỡ, Xinh đẹp, Vạn sự như ý, Bình an...' : 'VD: 1000 Days, Em yêu anh, Mãi bên nhau, Bé iu, Hạnh phúc...'}
+          placeholder={pageData.type === 'birthday' ? 'VD: Happy Birthday, Tuổi mới rạng rỡ, Xinh đẹp, Vạn sự như ý, Bình an...' : 'VD: Em yêu anh, Mãi bên nhau, Bé iu, Hạnh phúc...'}
           className={`w-full px-3 py-1.5 rounded-lg border text-xs bg-white focus:ring-2 ${
             pageData.type === 'birthday' ? 'border-amber-200 focus:ring-amber-400' : 'border-pink-200 focus:ring-rose-400'
           }`}

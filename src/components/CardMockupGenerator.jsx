@@ -26,6 +26,17 @@ export default function CardMockupGenerator({
   const cardRenderRef = useRef(null);
   const qrContainerRef = useRef(null);
 
+  // Sync card state whenever modal is opened with latest pageData
+  useEffect(() => {
+    if (isOpen) {
+      setCardPhoto(pageData.photos?.[0] || null);
+      setCardTitle(pageData.title || (pageData.type === 'birthday' ? 'Mừng Ngày Sinh Nhật Của Bạn 🎂' : 'Món Quà Bí Mật Dành Riêng Cho Em'));
+      setCardSender(pageData.sender || (pageData.type === 'birthday' ? 'Bạn của bạn' : 'Người yêu em'));
+      setCardRecipient(pageData.recipient || (pageData.type === 'birthday' ? 'Bạn Thân' : 'Em Yêu'));
+      setCardDate(pageData.date || (pageData.type === 'birthday' ? 'Sinh Nhật Vui Vẻ' : 'Kỷ Niệm Ngày Yêu'));
+    }
+  }, [isOpen, pageData]);
+
   // Render QR Code inside mockup whenever dependencies change
   useEffect(() => {
     if (!isOpen || !qrContainerRef.current) return;

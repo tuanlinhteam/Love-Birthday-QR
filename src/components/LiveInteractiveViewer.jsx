@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Volume2, VolumeX, Heart, Sparkles, Cake, Gift, ArrowLeft, Download, Mic, MicOff, Eye, EyeOff } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { melodyPlayer } from '../utils/melodySynthesizer';
 import { generateStandaloneHtml } from '../utils/exportHtml';
 import { ttsManager, TTS_VOICE_OPTIONS } from '../utils/ttsVoice';
 import { createNeonWordsEngine } from '../utils/neonWordsEngine';
+import { calculateDaysInfo } from '../utils/dateHelper';
 
 export default function LiveInteractiveViewer({
   isOpen,
@@ -23,6 +24,7 @@ export default function LiveInteractiveViewer({
   const memoryPhoto = pageData.photos?.[0] || null;
   const currentVoice = TTS_VOICE_OPTIONS.find(v => v.id === (pageData.ttsVoice || 'google_female_crystal')) || TTS_VOICE_OPTIONS[0];
   const isNeonWords = (!pageData.effect || pageData.effect === 'neon_words');
+  const daysInfo = useMemo(() => calculateDaysInfo(pageData.date, pageData.type), [pageData.date, pageData.type]);
 
   // Canvas animation: either 3D Neon Floating Words or Particles
   useEffect(() => {
@@ -311,6 +313,19 @@ export default function LiveInteractiveViewer({
               {pageData.recipient ? `Gửi ${pageData.recipient} ❤️` : (pageData.type === 'birthday' ? 'Happy Birthday! 🎂' : 'Gửi Đến Người Đặc Biệt ❤️')}
             </h2>
 
+            {pageData.date && (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-xs font-semibold text-rose-200 mb-3 shadow-sm">
+                <span>🗓️</span>
+                <span>{pageData.date}</span>
+                {daysInfo && (
+                  <>
+                    <span className="opacity-60">•</span>
+                    <span className="text-amber-300 font-bold">{daysInfo.badge}</span>
+                  </>
+                )}
+              </div>
+            )}
+
             <p className="text-sm text-slate-200 mb-6 leading-relaxed">
               {pageData.type === 'birthday'
                 ? 'Một giai điệu ngọt ngào, giọng đọc ấm áp và bầu trời chữ 3D lung linh đang chờ bạn mở ra...'
@@ -362,8 +377,26 @@ export default function LiveInteractiveViewer({
                 </h1>
 
                 {pageData.date && (
-                  <div className="text-xs font-semibold tracking-wider uppercase opacity-85 mb-4 text-pink-200">
-                    🗓️ {pageData.date}
+                  <div className="flex flex-col items-center gap-2 mb-5">
+                    <div className="text-xs font-semibold tracking-wider uppercase opacity-85 text-pink-200 flex items-center gap-1.5">
+                      <span>🗓️</span>
+                      <span>{pageData.date}</span>
+                    </div>
+
+                    {daysInfo && (
+                      <div className="px-4 py-2 rounded-2xl bg-gradient-to-r from-rose-500/30 via-pink-500/25 to-purple-500/30 border border-rose-400/40 shadow-lg shadow-rose-950/40 text-center">
+                        <div className="text-sm sm:text-base font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-200 via-pink-100 to-amber-200 flex items-center justify-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+                          <span>{daysInfo.mainText}</span>
+                          <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+                        </div>
+                        {daysInfo.secondaryText && (
+                          <div className="text-[11px] text-pink-200/80 mt-0.5 font-medium">
+                            {daysInfo.secondaryText}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
