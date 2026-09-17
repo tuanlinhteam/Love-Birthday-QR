@@ -9,25 +9,55 @@ import TipsGuideModal from './components/TipsGuideModal';
 import { COLOR_PRESETS, SAMPLE_MESSAGES } from './constants/presets';
 import { generateStandaloneHtml } from './utils/exportHtml';
 
+const DEFAULT_PAGE_DATA = {
+  type: 'love',
+  title: 'Gửi Đến Người Anh Yêu Nhất ❤️',
+  recipient: 'Em Yêu',
+  sender: 'Anh của em',
+  date: '14/02/2026',
+  message: SAMPLE_MESSAGES.love[0],
+  effect: 'neon_words',
+  musicStyle: 'romantic_chords',
+  enableTTS: true,
+  ttsVoice: 'google_female_crystal',
+  customWords: ['1000 Days', 'Em yêu anh', 'Hạnh phúc', 'Mãi bên nhau'],
+  photos: []
+};
+
+function getInitialPageData() {
+  if (typeof window === 'undefined') return DEFAULT_PAGE_DATA;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('d');
+    if (encoded) {
+      const raw = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      return {
+        type: raw.type || (raw.t === 2 ? 'birthday' : 'love'),
+        title: raw.title || raw.ti || (raw.t === 2 ? 'Happy Birthday to You! 🎂' : 'Gửi Đến Người Anh Yêu Nhất ❤️'),
+        recipient: raw.recipient || raw.r || '',
+        sender: raw.sender || raw.s || '',
+        date: raw.date || raw.d || '',
+        message: raw.message || raw.m || '',
+        effect: raw.effect || raw.e || 'neon_words',
+        musicStyle: raw.musicStyle || raw.mu || (raw.t === 2 ? 'birthday_melody' : 'romantic_chords'),
+        enableTTS: raw.enableTTS !== undefined ? raw.enableTTS : (raw.tts !== 0),
+        ttsVoice: raw.ttsVoice || raw.v || 'google_female_crystal',
+        customWords: raw.customWords || raw.w || [],
+        photos: raw.photos || raw.p || []
+      };
+    }
+  } catch (e) {
+    console.error('Failed to parse URL payload:', e);
+  }
+  return DEFAULT_PAGE_DATA;
+}
+
 export default function App() {
   // Mode: 'interactive' | 'text' | 'link'
   const [mode, setMode] = useState('interactive');
 
-  // Interactive page data
-  const [pageData, setPageData] = useState({
-    type: 'love',
-    title: 'Gửi Đến Người Anh Yêu Nhất ❤️',
-    recipient: 'Em Yêu',
-    sender: 'Anh của em',
-    date: '14/02/2026',
-    message: SAMPLE_MESSAGES.love[0],
-    effect: 'neon_words',
-    musicStyle: 'romantic_chords',
-    enableTTS: true,
-    ttsVoice: 'google_female_crystal',
-    customWords: ['1000 Days', 'Em yêu anh', 'Hạnh phúc', 'Mãi bên nhau'],
-    photos: []
-  });
+  // Interactive page data (pre-loaded synchronously from link payload if present)
+  const [pageData, setPageData] = useState(getInitialPageData);
 
   // QR Styling state
   const [selectedPreset, setSelectedPreset] = useState(COLOR_PRESETS[0]);
@@ -43,37 +73,11 @@ export default function App() {
   const [isMockupOpen, setIsMockupOpen] = useState(false);
   const [isLiveViewerOpen, setIsLiveViewerOpen] = useState(false);
 
-  // Check URL parameters to see if opened directly via scanned QR code in interactive view!
-  useEffect(() => {
+  // Check if visitor arrived via shared QR link / Zalo link (?d=... or ?view=1)
+  const isRecipientMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
     const params = new URLSearchParams(window.location.search);
-    const encoded = params.get('d');
-    if (encoded || params.get('view') === '1' || params.get('card') === '1') {
-      if (encoded) {
-        try {
-          const raw = JSON.parse(decodeURIComponent(escape(atob(encoded))));
-          const decoded = {
-            type: raw.type || (raw.t === 2 ? 'birthday' : 'love'),
-            title: raw.title || raw.ti || (raw.t === 2 ? 'Happy Birthday to You! 🎂' : 'Gửi Đến Người Anh Yêu Nhất ❤️'),
-            recipient: raw.recipient || raw.r || '',
-            sender: raw.sender || raw.s || '',
-            date: raw.date || raw.d || '',
-            message: raw.message || raw.m || '',
-            effect: raw.effect || raw.e || 'neon_words',
-            musicStyle: raw.musicStyle || raw.mu || (raw.t === 2 ? 'birthday_melody' : 'romantic_chords'),
-            enableTTS: raw.enableTTS !== undefined ? raw.enableTTS : (raw.tts !== 0),
-            ttsVoice: raw.ttsVoice || raw.v || 'google_female_crystal',
-            customWords: raw.customWords || raw.w || [],
-            photos: raw.photos || raw.p || []
-          };
-          setPageData(decoded);
-          setIsLiveViewerOpen(true);
-        } catch (e) {
-          console.error('Failed to parse encoded data from QR URL:', e);
-        }
-      } else if (params.get('view') === '1') {
-        setIsLiveViewerOpen(true);
-      }
-    }
+    return Boolean(params.get('d') || params.get('view') === '1' || params.get('card') === '1');
   }, []);
 
   // Compute final QR Data string for Interactive Page
@@ -115,6 +119,20 @@ export default function App() {
     link.click();
     URL.revokeObjectURL(url);
   };
+
+  // If user opens a shared link from Zalo/QR directly, open the full-screen celebration experience immediately!
+  if (isRecipientMode) {
+    return (
+      <LiveInteractiveViewer
+        isOpen={true}
+        isDirectLink={true}
+        pageData={pageData}
+        onClose={() => {
+          window.location.href = window.location.origin;
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 text-slate-800">

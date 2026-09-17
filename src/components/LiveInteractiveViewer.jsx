@@ -9,7 +9,8 @@ import { createNeonWordsEngine } from '../utils/neonWordsEngine';
 export default function LiveInteractiveViewer({
   isOpen,
   onClose,
-  pageData
+  pageData,
+  isDirectLink = false
 }) {
   const [isOpened, setIsOpened] = useState(false);
   const [typedText, setTypedText] = useState('');
@@ -228,32 +229,42 @@ export default function LiveInteractiveViewer({
 
       {/* Top Floating Controls */}
       <div className="fixed top-4 left-4 right-4 z-50 flex items-center justify-between max-w-4xl mx-auto">
-        <button
-          onClick={onClose}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/80 backdrop-blur text-slate-700 hover:bg-white text-xs font-semibold shadow-md transition-all hover:scale-105"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Quay lại Chỉnh Sửa</span>
-        </button>
+        {!isDirectLink ? (
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/80 backdrop-blur text-slate-700 hover:bg-white text-xs font-semibold shadow-md transition-all hover:scale-105"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Quay lại Chỉnh Sửa</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-rose-200 text-xs font-semibold">
+            <span>{pageData.type === 'birthday' ? '🎂 Sinh Nhật' : '💖 Lời Yêu'}</span>
+            <span className="text-white/40">•</span>
+            <span className="text-white truncate max-w-[140px] sm:max-w-[200px]">{pageData.title || 'Thiệp Yêu Thương'}</span>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleDownloadStandaloneHtml}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-rose-500 text-white hover:bg-rose-600 text-xs font-semibold shadow-md shadow-rose-200 transition-all hover:scale-105"
-            title="Tải về tệp HTML độc lập để gửi người ấy"
-          >
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Tải File Web (.html)</span>
-          </button>
+          {!isDirectLink && (
+            <button
+              onClick={handleDownloadStandaloneHtml}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-rose-500 text-white hover:bg-rose-600 text-xs font-semibold shadow-md shadow-rose-200 transition-all hover:scale-105"
+              title="Tải về tệp HTML độc lập để gửi người ấy"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Tải File Web (.html)</span>
+            </button>
+          )}
 
           {/* Toggle Hide/Show Card to admire the full-screen 3D neon words */}
           {isOpened && (
             <button
               onClick={() => setIsCardHidden(!isCardHidden)}
-              className="px-3 py-2 rounded-full bg-white/85 hover:bg-white text-slate-700 shadow-md text-xs font-bold transition-all flex items-center gap-1.5"
+              className="px-3 py-2 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20 shadow-md text-xs font-bold transition-all flex items-center gap-1.5"
               title="Ẩn/Hiện thiệp để ngắm trọn vẹn màn mưa chữ 3D"
             >
-              {isCardHidden ? <Eye className="w-4 h-4 text-rose-500" /> : <EyeOff className="w-4 h-4 text-slate-500" />}
+              {isCardHidden ? <Eye className="w-4 h-4 text-rose-400" /> : <EyeOff className="w-4 h-4 text-slate-300" />}
               <span className="hidden sm:inline">{isCardHidden ? 'Xem lại thiệp' : 'Ngắm mưa chữ'}</span>
             </button>
           )}
@@ -264,12 +275,12 @@ export default function LiveInteractiveViewer({
               onClick={toggleTTS}
               className={`px-3 py-2 rounded-full flex items-center gap-1.5 shadow-md text-xs font-bold transition-all ${
                 isPlayingTTS
-                  ? 'bg-rose-600 text-white animate-pulse shadow-rose-300'
-                  : 'bg-white/85 text-slate-700 hover:bg-white'
+                  ? 'bg-rose-600 text-white animate-pulse shadow-rose-500/50'
+                  : 'bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20'
               }`}
               title={`Giọng đọc: ${currentVoice.label}`}
             >
-              {isPlayingTTS ? <Mic className="w-4 h-4 text-white" /> : <Volume2 className="w-4 h-4 text-rose-500" />}
+              {isPlayingTTS ? <Mic className="w-4 h-4 text-white" /> : <Volume2 className="w-4 h-4 text-rose-400" />}
               <span>{isPlayingTTS ? 'Đang đọc...' : `Giọng ${currentVoice.tag}`}</span>
             </button>
           )}
@@ -278,7 +289,7 @@ export default function LiveInteractiveViewer({
           <button
             onClick={toggleMusic}
             className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all ${
-              isPlayingMusic ? 'bg-rose-500 text-white animate-pulse' : 'bg-white/80 text-slate-700'
+              isPlayingMusic ? 'bg-rose-500 text-white animate-pulse shadow-rose-500/50' : 'bg-white/15 text-white backdrop-blur-md border border-white/20 hover:bg-white/25'
             }`}
             title="Bật/Tắt Nhạc"
           >
@@ -290,35 +301,35 @@ export default function LiveInteractiveViewer({
       {/* Center Container */}
       <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative z-20">
         {!isOpened ? (
-          /* Initial State: The Romantic Surprise Box / Envelope */
-          <div className="max-w-md w-full bg-white/92 backdrop-blur-md rounded-3xl p-8 text-center shadow-2xl border border-rose-200/80 animate-float-slow text-slate-800">
+          /* Initial State: The Romantic Surprise Box / Envelope (Dark Glassmorphism matching screenshot) */
+          <div className="max-w-md w-full bg-[#160628]/85 backdrop-blur-xl rounded-3xl p-7 sm:p-8 text-center shadow-[0_0_50px_rgba(244,63,94,0.3)] border border-rose-500/35 animate-float-slow text-white">
             <div className="text-6xl mb-4 animate-bounce">
               {pageData.type === 'birthday' ? '🎂' : '💌'}
             </div>
 
-            <h2 className="font-handwriting text-3xl font-bold text-rose-600 mb-2">
-              {pageData.recipient ? `Gửi ${pageData.recipient} ❤️` : 'Gửi Đến Người Đặc Biệt'}
+            <h2 className="font-handwriting text-3xl sm:text-4xl font-bold text-rose-400 mb-2">
+              {pageData.recipient ? `Gửi ${pageData.recipient} ❤️` : (pageData.type === 'birthday' ? 'Happy Birthday! 🎂' : 'Gửi Đến Người Đặc Biệt ❤️')}
             </h2>
 
-            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+            <p className="text-sm text-slate-200 mb-6 leading-relaxed">
               {pageData.type === 'birthday'
                 ? 'Một giai điệu ngọt ngào, giọng đọc ấm áp và bầu trời chữ 3D lung linh đang chờ bạn mở ra...'
-                : 'Có một bức thư bí mật cùng mưa chữ tình yêu phát sáng muốn gửi trao đến bạn...'}
+                : 'Một giai điệu ngọt ngào, giọng đọc ấm áp và bầu trời chữ 3D lung linh đang chờ bạn mở ra...'}
             </p>
 
             <button
               onClick={handleOpenSurprise}
-              className="w-full py-4 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 hover:from-rose-600 hover:to-purple-600 text-white font-bold text-base rounded-2xl shadow-xl shadow-rose-300 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 hover:from-rose-600 hover:to-purple-600 text-white font-bold text-base rounded-2xl shadow-xl shadow-rose-500/40 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
             >
               {pageData.type === 'birthday' ? (
                 <>
                   <Cake className="w-5 h-5" />
-                  <span>Thổi Nến & Mở Quà Sinh Nhật 🎈</span>
+                  <span>Thổi Nến & Mở Quà Sinh Nhật 🎉</span>
                 </>
               ) : (
                 <>
                   <Heart className="w-5 h-5 fill-current" />
-                  <span>Chạm Để Mở Thư Tình 💖</span>
+                  <span>Chạm Để Mở Thư Tình Yêu 💖</span>
                 </>
               )}
             </button>
@@ -427,6 +438,16 @@ export default function LiveInteractiveViewer({
           )
         )}
       </div>
+
+      {/* Subtle Link for recipients to create their own gift */}
+      {isDirectLink && (
+        <a
+          href="/"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 text-white/70 hover:text-white text-[11px] font-medium transition-all flex items-center gap-1.5 shadow-lg"
+        >
+          <span>✨ Tạo thiệp yêu thương tương tự</span>
+        </a>
+      )}
     </div>
   );
 }
